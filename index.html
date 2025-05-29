@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bingo Night Show - Cartones con título visible</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background: #f9f9f9;
+  }
+  h1 {
+    text-align: center;
+  }
+  form {
+    margin-bottom: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+  label {
+    font-weight: bold;
+  }
+  input {
+    padding: 5px 8px;
+    font-size: 1rem;
+  }
+  button {
+    cursor: pointer;
+    padding: 8px 16px;
+    font-size: 1rem;
+    background: #28a745;
+    border: none;
+    color: white;
+    border-radius: 4px;
+    transition: background 0.3s;
+    align-self: center;
+  }
+  button:hover {
+    background: #218838;
+  }
+
+  .pagina {
+    page-break-after: always;
+    width: 8.5in;
+    height: 11in;
+    box-sizing: border-box;
+    padding: 0.4in 0.5in 0.4in 0.5in;
+    background: white;
+    display: flex;
+    flex-direction: column;
+  }
+  .encabezado {
+    font-weight: bold;
+    text-align: center;
+    font-size: 1.3rem;
+    margin-bottom: 0.25in;
+    flex: 0 0 auto;
+  }
+  .cartones {
+    flex: 1 1 auto;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 0.15in 0.3in;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    table-layout: fixed;
+  }
+  th, td {
+    border: 2px solid #444;
+    width: calc(100% / 5);
+    height: calc((100% - 30px) / 5);
+    text-align: center;
+    vertical-align: middle;
+    font-weight: bold;
+    position: relative;
+    overflow: hidden;
+  }
+  th > div, td > div {
+    font-size: 2rem;
+    line-height: 1;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    white-space: nowrap;
+  }
+  td.free > div {
+    font-size: 1.5rem;
+    color: white;
+  }
+  th {
+    background-color: #222;
+    color: white;
+    font-weight: bold;
+    padding: 5px 0;
+    font-size: 1.2rem;
+  }
+  td.free {
+    background-color: #f44;
+    color: white;
+  }
+
+  @media print {
+    body {
+      margin: 0;
+      background: white;
+    }
+    form, button {
+      display: none;
+    }
+    .pagina {
+      width: 8.5in;
+      height: 11in;
+      padding: 0.4in 0.5in 0.4in 0.5in;
+      box-sizing: border-box;
+      page-break-after: always;
+      display: flex;
+      flex-direction: column;
+      overflow: visible !important;
+    }
+    .encabezado {
+      font-size: 1.3rem;
+      margin-bottom: 0.25in;
+    }
+    .cartones {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(4, 1fr);
+      gap: 0.15in 0.3in;
+      flex: 1 1 auto;
+    }
+    table {
+      width: 100%;
+      height: 100%;
+      table-layout: fixed;
+      border-collapse: collapse;
+    }
+    th, td {
+  height: calc((100% - 50px) / 5); /* Reducir un poco la altura para compensar */
+  border: 2px solid #444;
+  width: calc(100% / 5);
+  text-align: center;
+  vertical-align: middle;
+  font-weight: bold;
+  position: relative;
+  overflow: hidden;
+}
+    }
+    th > div, td > div {
+      font-size: 2rem;
+      line-height: 1;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      white-space: nowrap;
+    }
+    td.free > div {
+      font-size: 1.5rem;
+      color: white;
+    }
+   th {
+  background-color: #222;
+  color: white;
+  font-weight: bold;
+  padding: 10px 0; /* Más padding vertical para que no se corte */
+  font-size: 1.5rem; /* Puedes aumentar un poco si quieres */
+  height: 15px; /* Fija la altura para la fila del encabezado */
+}
+  }
+</style>
+</head>
+<body>
+
+<h1>Bingo Night Show -13 EDICION pagina 2</h1>
+
+<form id="formulario">
+  <label for="fecha">Fecha:</label>
+  <input type="date" id="fecha" required />
+
+  <label for="precio">Precio:</label>
+  <input type="number" id="precio" value="5" min="0" step="0.01" required />
+
+  <label for="paginas">Número de hojas:</label>
+  <input type="number" id="paginas" value="1" min="1" max="1000" required style="width:60px;" />
+
+  <button type="submit">Generar Cartones</button>
+  <button type="button" id="guardarPDFBtn">Guardar PDF</button>
+</form>
+
+<div id="contenedorPaginas"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<script>
+  const rangos = {
+    B: [1,15],
+    I: [16,30],
+    N: [31,45],
+    G: [46,60],
+    O: [61,75]
+  };
+  const columnas = ['B','I','N','G','O'];
+
+  const patrones = [
+    [
+      [true,true,true,true,true],
+      [false,true,false,true,false],
+      [false,false,false,false,false],
+      [false,true,false,true,false],
+      [true,true,true,true,true]
+    ],
+    [
+      [true,true,true,true,true],
+      [false,false,true,false,false],
+      [false,false,true,false,false],
+      [false,false,true,false,false],
+      [false,false,true,false,false]
+    ],
+    [
+      [true,true,true,true,true],
+      [false,false,false,false,true],
+      [false,true,true,true,true],
+      [false,false,false,false,true],
+      [true,true,true,true,true]
+    ],
+    [
+      [true,true,true,true,true],
+      [false,false,true,false,false],
+      [false,false,true,false,false],
+      [false,false,true,false,false],
+      [true,true,true,true,true]
+    ],
+    [
+      [true,false,false,false,true],
+      [true,true,false,false,true],
+      [true,false,true,false,true],
+      [true,false,false,true,true],
+      [true,false,false,false,true]
+    ],
+    [
+      [true,true,true,true,true],
+      [true,true,false,true,true],
+      [true,false,false,false,true],
+      [true,true,false,true,true],
+      [true,true,true,true,true]
+    ],
+    [
+      [false,true,true,true,true],
+      [true,false,false,false,false],
+      [true,false,false,false,false],
+      [true,false,false,false,false],
+      [false,true,true,true,true]
+    ],
+    [
+      [true,true,true,true,true],
+      [true,true,true,true,true],
+      [true,true,false,true,true],
+      [true,true,true,true,true],
+      [true,true,true,true,true]
+    ]
+  ];
+
+  function generarCarton() {
+    const carton = {};
+    columnas.forEach(col => {
+      let nums = [];
+      while (nums.length < 5) {
+        const num = Math.floor(Math.random() * (rangos[col][1] - rangos[col][0] + 1)) + rangos[col][0];
+        if (!nums.includes(num)) nums.push(num);
+      }
+      carton[col] = nums;
+    });
+    carton['N'][2] = 'FREE';
+    return carton;
+  }
+
+  function dibujarCarton(carton, patron) {
+    const contenedor = document.createElement('div');
+
+    const tabla = document.createElement('table');
+    
+    // Título visible BINGO
+    const thead = document.createElement('thead');
+    const filaCab = document.createElement('tr');
+    columnas.forEach(col => {
+      const th = document.createElement('th');
+      th.innerHTML = `<div>${col}</div>`;
+      filaCab.appendChild(th);
+    });
+    thead.appendChild(filaCab);
+    tabla.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    for(let fila = 0; fila < 5; fila++) {
+      const tr = document.createElement('tr');
+      columnas.forEach((col, cidx) => {
+        const td = document.createElement('td');
+        if (patron[fila][cidx] || (fila === 2 && cidx === 2)) {
+          const val = carton[col][fila];
+          td.innerHTML = `<div>${val}</div>`;
+          if(val === 'FREE') {
+            td.classList.add('free');
+            td.setAttribute('aria-label', 'Espacio libre');
+          } else {
+            td.setAttribute('aria-label', `Número ${val} en columna ${col}`);
+          }
+        } else {
+          td.innerHTML = '<div></div>';
+        }
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    }
+    tabla.appendChild(tbody);
+
+    contenedor.appendChild(tabla);
+
+    return contenedor;
+  }
+
+  document.getElementById('formulario').addEventListener('submit', e => {
+    e.preventDefault();
+    const fecha = document.getElementById('fecha').value;
+    const precio = document.getElementById('precio').value;
+    const paginas = parseInt(document.getElementById('paginas').value);
+    if(!fecha || !precio || !paginas || paginas < 1) {
+      alert('Por favor, completa todos los campos correctamente.');
+      return;
+    }
+
+    const contenedor = document.getElementById('contenedorPaginas');
+    contenedor.innerHTML = '';
+
+    for(let p=0; p<paginas; p++) {
+      const paginaDiv = document.createElement('div');
+      paginaDiv.classList.add('pagina');
+
+      const encabezadoDiv = document.createElement('div');
+      encabezadoDiv.classList.add('encabezado');
+   ;
+      paginaDiv.appendChild(encabezadoDiv);
+
+      const cartonesDiv = document.createElement('div');
+      cartonesDiv.classList.add('cartones');
+
+      for(let i=0; i<8; i++) {
+        const carton = generarCarton();
+        const patron = patrones[(p*8 + i) % patrones.length];
+        const cartonDiv = dibujarCarton(carton, patron);
+        cartonesDiv.appendChild(cartonDiv);
+      }
+
+      paginaDiv.appendChild(cartonesDiv);
+      contenedor.appendChild(paginaDiv);
+    }
+  });
+
+  document.getElementById('guardarPDFBtn').addEventListener('click', () => {
+    window.scrollTo(0,0);
+    const contenedor = document.getElementById('contenedorPaginas');
+    if (contenedor.innerHTML.trim() === '') {
+      alert('Primero genera los cartones.');
+      return;
+    }
+    const opt = {
+      margin:       0,
+      filename:     'cartones_bingo.pdf',
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, scrollY: 0 },
+      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
+      pagebreak:    { mode: ['css', 'legacy'] }
+    };
+    html2pdf().set(opt).from(contenedor).save();
+  });
+
+  window.addEventListener('load', () => {
+    const today = new Date().toISOString().slice(0,10);
+    document.getElementById('fecha').value = today;
+    document.getElementById('precio').value = '5';
+  });
+</script>
+
+</body>
+</html>
